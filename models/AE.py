@@ -1,10 +1,10 @@
 
-from keras.layers import Input, Conv2D, Flatten, Dense, Conv2DTranspose, Reshape, Lambda, Activation, BatchNormalization, LeakyReLU, Dropout
-from keras.models import Model
-from keras import backend as K
-from keras.optimizers import Adam
-from keras.callbacks import ModelCheckpoint 
-from keras.utils import plot_model
+from tensorflow.keras.layers import Input, Conv2D, Flatten, Dense, Conv2DTranspose, Reshape, Lambda, Activation, BatchNormalization, LeakyReLU, Dropout
+from tensorflow.keras.models import Model
+from tensorflow.keras import backend as K
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.utils import plot_model
 
 from utils.callbacks import CustomCallback, step_decay_schedule
 
@@ -123,7 +123,7 @@ class Autoencoder():
     def compile(self, learning_rate):
         self.learning_rate = learning_rate
 
-        optimizer = Adam(lr=learning_rate)
+        optimizer = Adam(learning_rate=learning_rate)
 
         def r_loss(y_true, y_pred):
             return K.mean(K.square(y_true - y_pred), axis = [1,2,3])

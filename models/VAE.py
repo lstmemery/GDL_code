@@ -1,17 +1,19 @@
 
-from keras.layers import Input, Conv2D, Flatten, Dense, Conv2DTranspose, Reshape, Lambda, Activation, BatchNormalization, LeakyReLU, Dropout
-from keras.models import Model
-from keras import backend as K
-from keras.optimizers import Adam
-from keras.callbacks import ModelCheckpoint 
-from keras.utils import plot_model
+from tensorflow.keras.layers import Input, Conv2D, Flatten, Dense, Conv2DTranspose, Reshape, Lambda, Activation, BatchNormalization, LeakyReLU, Dropout
+from tensorflow.keras.models import Model
+from tensorflow.keras import backend as K
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.utils import plot_model
+
 
 from utils.callbacks import CustomCallback, step_decay_schedule 
 
 import numpy as np
-import json
 import os
 import pickle
+
+from utils.loaders import load_mnist
 
 
 class VariationalAutoencoder():
@@ -149,7 +151,7 @@ class VariationalAutoencoder():
             kl_loss = vae_kl_loss(y_true, y_pred)
             return  r_loss + kl_loss
 
-        optimizer = Adam(lr=learning_rate)
+        optimizer = Adam(learning_rate=learning_rate)
         self.model.compile(optimizer=optimizer, loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
 
 
@@ -191,6 +193,8 @@ class VariationalAutoencoder():
         checkpoint2 = ModelCheckpoint(os.path.join(run_folder, 'weights/weights.h5'), save_weights_only = True, verbose=1)
 
         callbacks_list = [checkpoint1, checkpoint2, custom_callback, lr_sched]
+
+        # disable_eager_execution()
 
         self.model.fit(     
             x_train
@@ -239,6 +243,40 @@ class VariationalAutoencoder():
 
 
         
+if __name__ == '__main__':
+    (x_train, y_train), (x_test, y_test) = load_mnist()
+    vae = VariationalAutoencoder(
+        input_dim=(28, 28, 1)
+        , encoder_conv_filters=[32, 64, 64, 64]
+        , encoder_conv_kernel_size=[3, 3, 3, 3]
+        , encoder_conv_strides=[1, 2, 2, 1]
+        , decoder_conv_t_filters=[64, 64, 32, 1]
+        , decoder_conv_t_kernel_size=[3, 3, 3, 3]
+        , decoder_conv_t_strides=[1, 2, 2, 1]
+        , z_dim=2
+    )
+    LEARNING_RATE = 0.0005
+    R_LOSS_FACTOR = 1000
+    vae.compile(LEARNING_RATE, R_LOSS_FACTOR)
+    BATCH_SIZE = 32
+    EPOCHS = 200
+    PRINT_EVERY_N_BATCHES = 100
+    INITIAL_EPOCH = 0
+
+    # run params
+    SECTION = 'vae'
+    RUN_ID = '0002'
+    DATA_NAME = 'digits'
+    RUN_FOLDER = 'run/{}/'.format(SECTION)
+    RUN_FOLDER += '_'.join([RUN_ID, DATA_NAME])
+    vae.train(
+        x_train
+        , batch_size=BATCH_SIZE
+        , epochs=EPOCHS
+        , run_folder=RUN_FOLDER
+        , print_every_n_batches=PRINT_EVERY_N_BATCHES
+        , initial_epoch=INITIAL_EPOCH
+    )
 
         
 
