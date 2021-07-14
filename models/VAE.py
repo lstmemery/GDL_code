@@ -6,7 +6,6 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.utils import plot_model
 
-
 from utils.callbacks import CustomCallback, step_decay_schedule 
 
 import numpy as np
@@ -143,16 +142,21 @@ class VariationalAutoencoder():
             return r_loss_factor * r_loss
 
         def vae_kl_loss(y_true, y_pred):
-            kl_loss =  -0.5 * K.sum(1 + self.log_var - K.square(self.mu) - K.exp(self.log_var), axis = 1)
+            kl_loss = -0.5 * K.sum(1 + self.log_var - K.square(self.mu) - K.exp(self.log_var), axis = 1)
             return kl_loss
 
         def vae_loss(y_true, y_pred):
             r_loss = vae_r_loss(y_true, y_pred)
             kl_loss = vae_kl_loss(y_true, y_pred)
-            return  r_loss + kl_loss
+            return r_loss + kl_loss
 
         optimizer = Adam(learning_rate=learning_rate)
-        self.model.compile(optimizer=optimizer, loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
+        self.model.add_loss(vae_loss(self.model.input, self.model.output))
+        self.model.add_metric(vae_kl_loss(self.model.input, self.model.output), name='vae_kl_loss')
+        self.model.compile(
+            optimizer=optimizer,
+            loss = None,
+            metrics = [vae_r_loss])
 
 
     def save(self, folder):
@@ -194,8 +198,6 @@ class VariationalAutoencoder():
 
         callbacks_list = [checkpoint1, checkpoint2, custom_callback, lr_sched]
 
-        # disable_eager_execution()
-
         self.model.fit(     
             x_train
             , x_train
@@ -205,8 +207,6 @@ class VariationalAutoencoder():
             , initial_epoch = initial_epoch
             , callbacks = callbacks_list
         )
-
-
 
     def train_with_generator(self, data_flow, epochs, steps_per_epoch, run_folder, print_every_n_batches = 100, initial_epoch = 0, lr_decay = 1, ):
 
@@ -221,7 +221,7 @@ class VariationalAutoencoder():
 
         self.model.save_weights(os.path.join(run_folder, 'weights/weights.h5'))
                 
-        self.model.fit_generator(
+        self.model.fit(
             data_flow
             , shuffle = True
             , epochs = epochs
@@ -229,55 +229,8 @@ class VariationalAutoencoder():
             , callbacks = callbacks_list
             , steps_per_epoch=steps_per_epoch 
             )
-
-
     
     def plot_model(self, run_folder):
         plot_model(self.model, to_file=os.path.join(run_folder ,'viz/model.png'), show_shapes = True, show_layer_names = True)
         plot_model(self.encoder, to_file=os.path.join(run_folder ,'viz/encoder.png'), show_shapes = True, show_layer_names = True)
         plot_model(self.decoder, to_file=os.path.join(run_folder ,'viz/decoder.png'), show_shapes = True, show_layer_names = True)
-
-
-
-        
-
-
-        
-if __name__ == '__main__':
-    (x_train, y_train), (x_test, y_test) = load_mnist()
-    vae = VariationalAutoencoder(
-        input_dim=(28, 28, 1)
-        , encoder_conv_filters=[32, 64, 64, 64]
-        , encoder_conv_kernel_size=[3, 3, 3, 3]
-        , encoder_conv_strides=[1, 2, 2, 1]
-        , decoder_conv_t_filters=[64, 64, 32, 1]
-        , decoder_conv_t_kernel_size=[3, 3, 3, 3]
-        , decoder_conv_t_strides=[1, 2, 2, 1]
-        , z_dim=2
-    )
-    LEARNING_RATE = 0.0005
-    R_LOSS_FACTOR = 1000
-    vae.compile(LEARNING_RATE, R_LOSS_FACTOR)
-    BATCH_SIZE = 32
-    EPOCHS = 200
-    PRINT_EVERY_N_BATCHES = 100
-    INITIAL_EPOCH = 0
-
-    # run params
-    SECTION = 'vae'
-    RUN_ID = '0002'
-    DATA_NAME = 'digits'
-    RUN_FOLDER = 'run/{}/'.format(SECTION)
-    RUN_FOLDER += '_'.join([RUN_ID, DATA_NAME])
-    vae.train(
-        x_train
-        , batch_size=BATCH_SIZE
-        , epochs=EPOCHS
-        , run_folder=RUN_FOLDER
-        , print_every_n_batches=PRINT_EVERY_N_BATCHES
-        , initial_epoch=INITIAL_EPOCH
-    )
-
-        
-
-
