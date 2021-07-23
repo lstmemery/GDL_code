@@ -1,11 +1,12 @@
 import pickle
 import os
 
-from tensorflow.keras.datasets import mnist, cifar100,cifar10
+from tensorflow.keras.datasets import mnist, cifar100, cifar10
 from tensorflow.keras.preprocessing.image import ImageDataGenerator, load_img, save_img, img_to_array
 
 import pandas as pd
 
+from pathlib import Path
 import numpy as np
 from os import walk, getcwd
 import h5py
@@ -17,6 +18,8 @@ from tensorflow.keras.applications import vgg19
 from tensorflow.keras import backend as K
 from tensorflow.keras.utils import to_categorical
 
+
+PROJECT_ROOT = Path(os.path.dirname(__file__)).parent
 
 class ImageLabelLoader():
     def __init__(self, image_folder, target_size):
@@ -33,7 +36,7 @@ class ImageLabelLoader():
                 , x_col='image_id'
                 , y_col=label
                 , target_size=self.target_size 
-                , class_mode='other'
+                , class_mode='raw'
                 , batch_size=batch_size
                 , shuffle=True
             )
@@ -177,7 +180,7 @@ def load_fashion_mnist(input_rows, input_cols, path='./data/fashion/fashion-mnis
 
 def load_safari(folder):
 
-    mypath = os.path.join("./data", folder)
+    mypath = PROJECT_ROOT / 'data' / folder
     txt_name_list = []
     for (dirpath, dirnames, filenames) in walk(mypath):
         for f in filenames:
@@ -294,9 +297,6 @@ def load_music(data_name, filename, n_bars, n_steps_per_bar):
 
     data_binary = data_binary.transpose([0,1,2, 4,3])
     
-    
-
-    
 
     return data_binary, data_ints, data
 
@@ -310,4 +310,3 @@ def preprocess_image(data_name, file, img_nrows, img_ncols):
     img = np.expand_dims(img, axis=0)
     img = vgg19.preprocess_input(img)
     return img
-

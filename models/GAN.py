@@ -1,12 +1,11 @@
 
-from keras.layers import Input, Conv2D, Flatten, Dense, Conv2DTranspose, Reshape, Lambda, Activation, BatchNormalization, LeakyReLU, Dropout, ZeroPadding2D, UpSampling2D
-from keras.layers.merge import _Merge
+from tensorflow.keras.layers import Input, Conv2D, Flatten, Dense, Conv2DTranspose, Reshape, Lambda, Activation, BatchNormalization, LeakyReLU, Dropout, ZeroPadding2D, UpSampling2D
 
-from keras.models import Model, Sequential
-from keras import backend as K
-from keras.optimizers import Adam, RMSprop
-from keras.utils import plot_model
-from keras.initializers import RandomNormal
+from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras import backend as K
+from tensorflow.keras.optimizers import Adam, RMSprop
+from tensorflow.keras.utils import plot_model
+from tensorflow.keras.initializers import RandomNormal
 
 import numpy as np
 import json
@@ -179,11 +178,11 @@ class GAN():
        
     def get_opti(self, lr):
         if self.optimiser == 'adam':
-            opti = Adam(lr=lr, beta_1=0.5)
+            opti = Adam(learning_rate=lr, beta_1=0.5)
         elif self.optimiser == 'rmsprop':
-            opti = RMSprop(lr=lr)
+            opti = RMSprop(learning_rate=lr)
         else:
-            opti = Adam(lr=lr)
+            opti = Adam(learning_rate=lr)
 
         return opti
 
@@ -212,6 +211,7 @@ class GAN():
         self.model = Model(model_input, model_output)
 
         self.model.compile(optimizer=self.get_opti(self.generator_learning_rate) , loss='binary_crossentropy', metrics=['accuracy'])
+        # self.model.compile_metrics()
 
         self.set_trainable(self.discriminator, True)
 
@@ -331,7 +331,7 @@ class GAN():
         self.model.save(os.path.join(run_folder, 'model.h5'))
         self.discriminator.save(os.path.join(run_folder, 'discriminator.h5'))
         self.generator.save(os.path.join(run_folder, 'generator.h5'))
-        pkl.dump(self, open( os.path.join(run_folder, "obj.pkl"), "wb" ))
+        # pkl.dump(self, open( os.path.join(run_folder, "obj.pkl"), "wb" ))
 
     def load_weights(self, filepath):
         self.model.load_weights(filepath)
